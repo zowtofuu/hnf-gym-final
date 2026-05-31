@@ -128,7 +128,7 @@ if ($token) {
         .id-address .addr-top {
             font-size: 7px;
             font-weight: 700;
-            color: #fff;
+            color: oklch(85.2% 0.199 91.936);
             letter-spacing: .3px;
             white-space: nowrap;
         }

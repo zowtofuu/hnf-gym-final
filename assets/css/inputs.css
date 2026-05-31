@@ -28,7 +28,7 @@ input {
 .btn-primary:disabled {
   background-color: var(--clr-slate-300);
   border: 1px solid var(--clr-slate-300);
-  cursor:not-allowed;
+  cursor: not-allowed;
 }
 /* SECONDARY BUTTON */
 .btn-secondary {
@@ -49,7 +49,8 @@ input {
 
 /* ICON BUTTON */
 .icon-button,
-.icon-button-plain {
+.icon-button-plain,
+.icon-button-text {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -63,6 +64,22 @@ input {
     fill 0.2s ease;
 }
 
+.icon-button-text {
+  gap: var(--md);
+
+  color: var(--clr-stone-950);
+  background: var(--clr-lime-400);
+  white-space: nowrap;
+  text-decoration: none;
+}
+.icon-button-text svg {
+  width: 24px;
+  height: 24px;
+  fill: currentColor;
+}
+.icon-button-text:hover {
+  background-color: var(--clr-lime-500);
+}
 .icon-button {
   width: 40px;
   height: 40px;
@@ -118,7 +135,7 @@ input {
   fill: var(--clr-lime-500);
 }
 .form-as-button.danger button:hover {
-  fill: var( --clr-rose-600);
+  fill: var(--clr-rose-600);
 }
 .checkbox {
   width: 20px;
