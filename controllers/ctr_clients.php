@@ -30,6 +30,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_client'])) {
 }
 
 $searchTerm = trim($_GET['search'] ?? '');
-$clients = ($searchTerm !== '') ? searchClients($pdo, $searchTerm) : getAllClients($pdo);
+
+$allowedSortColumns = ['first_name', 'last_name', 'birthday'];
+$allowedSortOrders  = ['asc', 'desc'];
+
+$sortBy    = in_array($_GET['sort_by'] ?? '', $allowedSortColumns, true) ? $_GET['sort_by'] : null;
+$sortOrder = in_array(strtolower($_GET['sort_order'] ?? ''), $allowedSortOrders, true) ? strtolower($_GET['sort_order']) : 'asc';
+
+$clients = ($searchTerm !== '')
+    ? searchClients($pdo, $searchTerm, $sortBy, $sortOrder)
+    : getAllClients($pdo, $sortBy, $sortOrder);
 
 require_once __DIR__ . '/../views/vw_clients.php';

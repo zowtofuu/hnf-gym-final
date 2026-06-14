@@ -2,8 +2,17 @@
 require_once __DIR__ . '/../config/database.php';
 
 // Fetch all clients from the database
-function getAllClients(PDO $pdo)
+function getAllClients(PDO $pdo, ?string $sortBy = null, string $sortOrder = 'asc')
 {
+    $allowedColumns = ['first_name', 'last_name', 'birthday'];
+    $sortOrder = strtoupper($sortOrder) === 'DESC' ? 'DESC' : 'ASC';
+
+    if ($sortBy !== null && in_array($sortBy, $allowedColumns, true)) {
+        $orderClause = "`{$sortBy}` {$sortOrder}";
+    } else {
+        $orderClause = "client_id DESC";
+    }
+
     $sql = "SELECT 
             client_id,
             first_name,
@@ -12,7 +21,7 @@ function getAllClients(PDO $pdo)
             created_at,
             contact
             FROM clients
-            ORDER BY client_id DESC
+            ORDER BY {$orderClause}
     ";
 
     $stmt = $pdo->prepare($sql);
@@ -22,14 +31,23 @@ function getAllClients(PDO $pdo)
 }
 
 // Search clients based on the search term
-function searchClients(PDO $pdo, string $searchTerm): array
+function searchClients(PDO $pdo, string $searchTerm, ?string $sortBy = null, string $sortOrder = 'asc'): array
 {
+    $allowedColumns = ['first_name', 'last_name', 'birthday'];
+    $sortOrder = strtoupper($sortOrder) === 'DESC' ? 'DESC' : 'ASC';
+
+    if ($sortBy !== null && in_array($sortBy, $allowedColumns, true)) {
+        $orderClause = "`{$sortBy}` {$sortOrder}";
+    } else {
+        $orderClause = "client_id DESC";
+    }
+
     $sql = "SELECT client_id, first_name, last_name, contact, birthday
             FROM clients
             WHERE first_name LIKE :first_name
             OR last_name LIKE :last_name
             OR CONCAT(first_name, ' ', last_name) LIKE :full_name
-            ORDER BY client_id DESC
+            ORDER BY {$orderClause}
     ";
 
     $stmt = $pdo->prepare($sql);

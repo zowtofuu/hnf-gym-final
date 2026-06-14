@@ -37,15 +37,15 @@
             <!-- FIRST NAME -->
             <div class="form-group">
                 <label for="first_name">First Name</label>
-                <input class="capitalize rounded-sm px-md py-sm focus-visible" type="text" name="first_name" id="first_name"
-                    value="<?= htmlspecialchars((string) ($old['first_name'] ?? '')) ?>" required>
+                <input class="capitalize rounded-sm px-md py-sm focus-visible" type="text" name="first_name"
+                    id="first_name" value="<?= htmlspecialchars((string) ($old['first_name'] ?? '')) ?>" required>
             </div>
 
             <!-- LAST NAME -->
             <div class="form-group">
                 <label for="last_name">Last Name</label>
-                <input class="capitalize rounded-sm px-md py-sm focus-visible" type="text" name="last_name" id="last_name"
-                    value="<?= htmlspecialchars((string) ($old['last_name'] ?? '')) ?>" required>
+                <input class="capitalize rounded-sm px-md py-sm focus-visible" type="text" name="last_name"
+                    id="last_name" value="<?= htmlspecialchars((string) ($old['last_name'] ?? '')) ?>" required>
             </div>
 
             <!-- CONTACT NUMBER -->
@@ -65,7 +65,8 @@
             <!-- MEMBERSHIP TYPE -->
             <div class="form-group">
                 <label for="membership_type">Membership Type</label>
-                <select class="capitalize rounded-sm px-md py-sm focus-visible" name="membership_type" id="membership_type" required>
+                <select class="capitalize rounded-sm px-md py-sm focus-visible" name="membership_type"
+                    id="membership_type" required>
                     <?php foreach ($membershipTypes as $value => $label): ?>
                         <option value="<?= htmlspecialchars((string) $value) ?>" <?= $selectedMembershipType === (string) $value ? 'selected' : '' ?>>
                             <?= htmlspecialchars((string) $label) ?>
@@ -74,10 +75,19 @@
                 </select>
             </div>
 
-            <!-- PASS TYPE -->
+             <!-- MEMBERSHIP START DATE -->
+            <div class="form-group">
+                <label for="membership_start_date">Membership Start Date</label>
+                <input class="capitalize rounded-sm px-md py-sm focus-visible" type="date" name="membership_start_date"
+                    id="membership_start_date" value="<?= htmlspecialchars((string) ($old['membership_start_date'] ?? date('Y-m-d'))) ?>"
+                    required>
+            </div>
+
+             <!-- PASS TYPE -->
             <div class="form-group">
                 <label for="pass_type">Pass Type</label>
-                <select class="capitalize rounded-sm px-md py-sm focus-visible" name="pass_type" id="pass_type" required>
+                <select class="capitalize rounded-sm px-md py-sm focus-visible" name="pass_type" id="pass_type"
+                    required>
                     <?php foreach ($passTypes as $value => $label): ?>
                         <option value="<?= htmlspecialchars((string) $value) ?>" <?= $selectedPassType === (string) $value ? 'selected' : '' ?>>
                             <?= htmlspecialchars((string) $label) ?>
@@ -86,17 +96,27 @@
                 </select>
             </div>
 
+             <!-- PASS START DATE -->
+            <div class="form-group">
+                <label for="pass_start_date">Pass Start Date</label>
+                <input class="capitalize rounded-sm px-md py-sm focus-visible" type="date" name="pass_start_date"
+                    id="pass_start_date" value="<?= htmlspecialchars((string) ($old['pass_start_date'] ?? date('Y-m-d'))) ?>"
+                    required>
+            </div>
+
             <!-- PRICES -->
             <div class="flex gap-xsm"">
-                <span class="badge badge-active">Plan Fee: <span id="plan_price">-</span></span>
+                <span class=" badge badge-active">Plan Fee: <span id="plan_price">-</span></span>
                 <span class="badge badge-active">Membership Fee: <span id="annual_fee">-</span></span>
                 <span class="badge badge-yellow">Total: <span id="total_price">-</span></span>
             </div>
 
             <!-- CONTROLS -->
             <div class="form-actions">
-                <a class="capitalize rounded-sm px-md py-sm btn-anchor btn-secondary" href="../controllers/ctr_clients.php">Cancel</a>
-                <button class="capitalize rounded-sm px-md py-sm cursor-pointer btn-primary" type="submit" type="submit">Add Client</button>
+                <a class="capitalize rounded-sm px-md py-sm btn-anchor btn-secondary"
+                    href="../controllers/ctr_clients.php">Cancel</a>
+                <button class="capitalize rounded-sm px-md py-sm cursor-pointer btn-primary" type="submit"
+                    type="submit">Add Client</button>
             </div>
         </form>
     </div>
@@ -164,9 +184,23 @@
             totalPriceOutput.textContent = formatPeso(totalPrice);
         }
 
-        membershipTypeInput.addEventListener('change', updatePlanPrice);
+        const membershipStartDateInput = document.getElementById('membership_start_date');
+
+        function toggleMembershipStartDate() {
+            const isMember = membershipTypeInput.value === 'member';
+            membershipStartDateInput.disabled = !isMember;
+            if (!isMember) {
+                membershipStartDateInput.value = '';
+            }
+        }
+
+        membershipTypeInput.addEventListener('change', () => {
+            toggleMembershipStartDate();
+            updatePlanPrice();
+        });
         passTypeInput.addEventListener('change', updatePlanPrice);
 
+        toggleMembershipStartDate();
         updatePlanPrice();
     </script>
 </body>

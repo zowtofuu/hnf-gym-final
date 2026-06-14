@@ -16,6 +16,8 @@ function addClient(PDO $pdo, array $data): int
     $birthday = trim((string) ($data['birthday'] ?? ''));
     $membershipType = trim((string) ($data['membership_type'] ?? ''));
     $passType = trim((string) ($data['pass_type'] ?? ''));
+    $membershipStartDate = trim((string) ($data['membership_start_date'] ?? date('Y-m-d')));
+    $passStartDate = trim((string) ($data['pass_start_date'] ?? date('Y-m-d')));
 
     validateAddClientData($firstName, $lastName, $contact, $birthday, $membershipType, $passType);
 
@@ -29,12 +31,12 @@ function addClient(PDO $pdo, array $data): int
         }
 
         $clientId = insertClient($pdo, $firstName, $lastName, $contact, $birthday);
-        $subscriptionId = insertClientSubscription($pdo, $clientId, $plan);
+        $subscriptionId = insertClientSubscription($pdo, $clientId, $plan, $membershipStartDate, $passStartDate);
 
-        insertSubscriptionSale($pdo, $subscriptionId, $clientId, $plan);
+        insertSubscriptionSale($pdo, $subscriptionId, $clientId, $plan, $passStartDate);
 
         if ($membershipType === 'member') {
-            insertAnnualMembershipSale($pdo, $clientId, $subscriptionId);
+            insertAnnualMembershipSale($pdo, $clientId, $subscriptionId, $membershipStartDate);
         }
 
         $pdo->commit();
@@ -98,21 +100,20 @@ function insertClient(PDO $pdo, string $firstName, string $lastName, string $con
     return (int) $pdo->lastInsertId();
 }
 
-function insertClientSubscription(PDO $pdo, int $clientId, array $plan): int
+function insertClientSubscription(PDO $pdo, int $clientId, array $plan, string $membershipStartDate, string $passStartDate): int
 {
-    $today = date('Y-m-d');
     $membershipType = (string) $plan['membership_type'];
     $passType = (string) $plan['pass_type'];
 
-    $subscriptionStart = $today;
+    $subscriptionStart = $passStartDate;
     $subscriptionEnd = computeMembershipEndDate($subscriptionStart, $passType);
 
     $membershipStart = null;
     $membershipEnd = null;
 
     if ($membershipType === 'member') {
-        $membershipStart = $today;
-        $membershipEnd = (new DateTimeImmutable($today))->modify('+1 year')->modify('-1 day')->format('Y-m-d');
+        $membershipStart = $membershipStartDate;
+        $membershipEnd = (new DateTimeImmutable($membershipStartDate))->modify('+1 year')->modify('-1 day')->format('Y-m-d');
     }
 
     $sql = "INSERT INTO subscriptions (
@@ -154,7 +155,7 @@ function generateSubscriptionToken(): string
     return bin2hex(random_bytes(24));
 }
 
-function insertSubscriptionSale(PDO $pdo, int $subscriptionId, int $clientId, array $plan): void
+function insertSubscriptionSale(PDO $pdo, int $subscriptionId, int $clientId, array $plan, string $saleDate): void
 {
     $sql = "INSERT INTO sales (
                 transaction_type,
@@ -162,14 +163,16 @@ function insertSubscriptionSale(PDO $pdo, int $subscriptionId, int $clientId, ar
                 client_id,
                 item_name,
                 quantity,
-                amount
+                amount,
+                created_at
             ) VALUES (
                 'subscription',
                 :reference_id,
                 :client_id,
                 :item_name,
                 1,
-                :amount
+                :amount,
+                :created_at
             )";
 
     $stmt = $pdo->prepare($sql);
@@ -178,10 +181,11 @@ function insertSubscriptionSale(PDO $pdo, int $subscriptionId, int $clientId, ar
         ':client_id' => $clientId,
         ':item_name' => membershipPlanName($plan),
         ':amount' => (float) $plan['price'],
+        ':created_at' => $saleDate,
     ]);
 }
 
-function insertAnnualMembershipSale(PDO $pdo, int $clientId, int $subscriptionId): void
+function insertAnnualMembershipSale(PDO $pdo, int $clientId, int $subscriptionId, string $saleDate): void
 {
     $annualFee = getAnnualMembershipFee($pdo);
 
@@ -195,14 +199,16 @@ function insertAnnualMembershipSale(PDO $pdo, int $clientId, int $subscriptionId
                 client_id,
                 item_name,
                 quantity,
-                amount
+                amount,
+                created_at
             ) VALUES (
                 'annual_membership',
                 :reference_id,
                 :client_id,
                 :item_name,
                 1,
-                :amount
+                :amount,
+                :created_at
             )";
 
     $stmt = $pdo->prepare($sql);
@@ -211,6 +217,7 @@ function insertAnnualMembershipSale(PDO $pdo, int $clientId, int $subscriptionId
         ':client_id' => $clientId,
         ':item_name' => 'Annual Membership Fee',
         ':amount' => $annualFee,
+        ':created_at' => $saleDate,
     ]);
 }
 

@@ -258,6 +258,7 @@
             // }
             if (status === 'success' && response.data) {
                 const data = response.data;
+                const delay = 1000 * 10;
 
                 successDetails.classList.remove('hidden');
                 clientName.textContent = data.client_name || '—';
@@ -273,7 +274,7 @@
                     feedbackResult.classList.add('hidden');
                     feedbackDefault.classList.remove('hidden');
                     feedbackBox.classList.remove('success', 'error', 'warning');
-                }, 5000);
+                }, delay);
             } else {
                 successDetails.classList.add('hidden');
             }

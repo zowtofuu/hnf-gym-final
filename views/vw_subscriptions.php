@@ -31,9 +31,11 @@ function hnfSelected(string $currentValue, string $optionValue): string
         <!-- CONTROLS -->
         <section class="flex justify-between flex-wrap pb-lg">
             <form action="" method="get">
+                <!-- Search by client name -->
                 <input class="capitalize rounded-sm px-md py-sm focus-visible" type="text" id="search" name="search"
                     placeholder="Search by client name" value="<?= hnfEscape($filters['search'] ?? '') ?>">
 
+                <!-- Membership Type filter -->
                 <select class="capitalize rounded-sm px-md py-sm focus-visible" id="membership_type"
                     name="membership_type">
                     <option value="">All Membership Types</option>
@@ -45,6 +47,7 @@ function hnfSelected(string $currentValue, string $optionValue): string
                     <?php endforeach; ?>
                 </select>
 
+                <!-- Pass Type filter -->
                 <select class="capitalize rounded-sm px-md py-sm focus-visible" id="pass_type" name="pass_type">
                     <option value="">All Pass Types</option>
                     <?php foreach (($filterOptions['pass_types'] ?? []) as $passType): ?>
@@ -54,6 +57,7 @@ function hnfSelected(string $currentValue, string $optionValue): string
                     <?php endforeach; ?>
                 </select>
 
+                <!-- Status filter -->
                 <select class="capitalize rounded-sm px-md py-sm focus-visible" id="status_filter" name="status_filter">
                     <option value="">All Status</option>
 
@@ -74,6 +78,7 @@ function hnfSelected(string $currentValue, string $optionValue): string
                     </option>
                 </select>
 
+                <!-- Expiring Soon filter -->
                 <select class="capitalize rounded-sm px-md py-sm focus-visible" id="expiring_filter"
                     name="expiring_filter">
                     <option value="">Select Expiring</option>
@@ -144,6 +149,7 @@ function hnfSelected(string $currentValue, string $optionValue): string
                                 <?php endforeach; ?>
 
                                 <td>
+                                    <!-- Edit Subscription -->
                                     <a class="icon-button-plain" title="Edit Subscription"
                                         href="ctr_subscription-edit.php?id=<?= hnfEscape($subscription['subscription_id']) ?>">
                                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960">
@@ -152,6 +158,7 @@ function hnfSelected(string $currentValue, string $optionValue): string
                                         </svg>
                                     </a>
 
+                                    <!-- View Subscription -->
                                     <a class="icon-button-plain" title="View Subscription" target="_blank"
                                         href="ctr_view-subcription-info.php?id=<?= hnfEscape($subscription['subscription_id']) ?>">
                                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960">
@@ -160,9 +167,12 @@ function hnfSelected(string $currentValue, string $optionValue): string
                                         </svg>
                                     </a>
 
+                                    
+                                    <!-- Renew Subscription (Button will show only if expired) -->
                                     <?php if (
                                         ($subscription['display_status'] ?? '') === 'expired_membership' ||
-                                        ($subscription['display_status'] ?? '') === 'expired_pass'
+                                        ($subscription['display_status'] ?? '') === 'expired_pass'|| 
+                                        ($subscription['display_status'] ?? '') === 'expired_pass_and_membership'
                                     ): ?>
                                         <a class="icon-button-plain" title="Renew Subscription"
                                             href="ctr_subscription-renew.php?id=<?= hnfEscape($subscription['subscription_id']) ?>">

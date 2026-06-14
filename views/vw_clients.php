@@ -6,6 +6,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Clients</title>
     <link rel="stylesheet" href="../assets/css/index.css">
+    <style>
+        .sort-header {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            text-decoration: none;
+            color: inherit;
+            font-weight: inherit;
+            white-space: nowrap;
+        }
+        .sort-header:hover {
+            opacity: 0.75;
+        }
+        .sort-header.sort-active {
+            color: var(--color-primary, #4f46e5);
+        }
+        .sort-icon {
+            display: inline-flex;
+            align-items: center;
+            flex-shrink: 0;
+        }
+    </style>
 </head>
 
 <body>
@@ -54,6 +76,15 @@
                     return !in_array($column, $columnsToHide, true);
                 });
             }
+
+            $sortableColumns = ['first_name', 'last_name', 'birthday'];
+
+            function buildSortUrl(string $column, string $currentSortBy, string $currentSortOrder, string $searchTerm): string {
+                $newOrder = ($currentSortBy === $column && $currentSortOrder === 'asc') ? 'desc' : 'asc';
+                $params = ['sort_by' => $column, 'sort_order' => $newOrder];
+                if ($searchTerm !== '') $params['search'] = $searchTerm;
+                return '../controllers/ctr_clients.php?' . http_build_query($params);
+            }
             ?>
 
             <table>
@@ -61,7 +92,30 @@
                     <tr>
                         <?php foreach ($visibleColumns as $column): ?>
                             <th>
-                                <?= htmlspecialchars($columnLabels[$column] ?? ucwords(str_replace('_', ' ', $column))) ?>
+                                <?php if (in_array($column, $sortableColumns, true)): ?>
+                                    <?php
+                                        $isActive = ($sortBy ?? '') === $column;
+                                        $nextOrder = ($isActive && ($sortOrder ?? 'asc') === 'asc') ? 'desc' : 'asc';
+                                        $url = buildSortUrl($column, $sortBy ?? '', $sortOrder ?? 'asc', $searchTerm ?? '');
+                                    ?>
+                                    <a class="sort-header <?= $isActive ? 'sort-active' : '' ?>" href="<?= htmlspecialchars($url) ?>">
+                                        <?= htmlspecialchars($columnLabels[$column] ?? ucwords(str_replace('_', ' ', $column))) ?>
+                                        <span class="sort-icon">
+                                            <?php if ($isActive && ($sortOrder ?? 'asc') === 'asc'): ?>
+                                                <!-- Up arrow (ASC) -->
+                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" width="16" height="16" fill="currentColor"><path d="M440-160v-487L216-423l-56-57 320-320 320 320-56 57-224-224v487h-80Z"/></svg>
+                                            <?php elseif ($isActive && ($sortOrder ?? 'asc') === 'desc'): ?>
+                                                <!-- Down arrow (DESC) -->
+                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" width="16" height="16" fill="currentColor"><path d="M440-800v487L216-537l-56 57 320 320 320-320-56-57-224 224v-487h-80Z"/></svg>
+                                            <?php else: ?>
+                                                <!-- Up-down neutral arrow -->
+                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" width="16" height="16" fill="currentColor" style="opacity:0.4"><path d="M320-440v-287L217-624l-57-56 200-200 200 200-57 56-103-103v287h-80ZM600-80 400-280l57-56 103 103v-287h80v287l103-103 57 56L600-80Z"/></svg>
+                                            <?php endif; ?>
+                                        </span>
+                                    </a>
+                                <?php else: ?>
+                                    <?= htmlspecialchars($columnLabels[$column] ?? ucwords(str_replace('_', ' ', $column))) ?>
+                                <?php endif; ?>
                             </th>
                         <?php endforeach; ?>
 

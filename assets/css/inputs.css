@@ -145,3 +145,9 @@ input {
   flex-shrink: 0;
   align-self: center;
 }
+
+/* PATCH */
+#membership_start_date:disabled {
+  border: 1px solid var(--clr-slate-300);
+  cursor: not-allowed;
+}

@@ -11,6 +11,8 @@ $old = [
     'birthday' => '',
     'membership_type' => 'non_member',
     'pass_type' => 'daily',
+    'membership_start_date' => date('Y-m-d'),
+    'pass_start_date' => date('Y-m-d'),
 ];
 
 try {
@@ -30,6 +32,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'birthday' => trim((string) ($_POST['birthday'] ?? '')),
         'membership_type' => trim((string) ($_POST['membership_type'] ?? '')),
         'pass_type' => trim((string) ($_POST['pass_type'] ?? '')),
+        'membership_start_date' => trim((string) ($_POST['membership_start_date'] ?? date('Y-m-d'))),
+        'pass_start_date' => trim((string) ($_POST['pass_start_date'] ?? date('Y-m-d'))),
     ];
 
     try {
