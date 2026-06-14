@@ -1,6 +1,6 @@
 <?php
 
-// Format date for display, return 'N/A' if date is null or empty
+// Format a date string for display (e.g. "June 15, 2026"); returns 'N/A' for null/empty values
 function hnfFormatDate(?string $date): string
 {
     if (empty($date)) {
@@ -10,42 +10,42 @@ function hnfFormatDate(?string $date): string
     return date('F j, Y', strtotime($date));
 }
 
-// Convert membership type code to human-readable label
+// Convert membership_type DB code to a human-readable label
 function hnfMembershipTypeLabel(?string $type): string
 {
     return match ($type) {
-        'member' => 'Member',
-        'non_member' => 'Non-member',
-        'student_senior' => 'Student/Senior',
-        default => 'N/A',
+        'member'          => 'Member',
+        'non_member'      => 'Non-member',
+        'student_senior'  => 'Student/Senior',
+        default           => 'N/A',
     };
 }
 
-// Convert pass type code to human-readable label
+// Convert pass_type DB code to a human-readable label
 function hnfPassTypeLabel(?string $type): string
 {
     return match ($type) {
-        'daily' => 'Daily',
+        'daily'   => 'Daily',
         'monthly' => 'Monthly',
-        default => 'N/A',
+        default   => 'N/A',
     };
 }
 
-// Convert status code to human-readable label
+// Convert status DB code to a human-readable label
 function hnfStatusLabel(?string $status): string
 {
     return match ($status) {
-        'active' => 'Active',
-        'expired' => 'Expired',
-        'suspended' => 'Suspended',
-        'expired_membership' => 'Expired Membership',
-        'expired_pass' => 'Expired Pass',
+        'active'                      => 'Active',
+        'expired'                     => 'Expired',
+        'suspended'                   => 'Suspended',
+        'expired_membership'          => 'Expired Membership',
+        'expired_pass'                => 'Expired Pass',
         'expired_pass_and_membership' => 'Expired Pass and Membership',
-        default => 'N/A',
+        default                       => 'N/A',
     };
 }
 
-// Fetch distinct membership types and pass types for filter dropdowns
+// Fetch distinct membership types and pass types from the DB for filter dropdowns
 function getSubscriptionFilterOptions(PDO $pdo): array
 {
     $sql = "SELECT DISTINCT membership_type, pass_type
@@ -56,7 +56,7 @@ function getSubscriptionFilterOptions(PDO $pdo): array
     $stmt->execute();
 
     $membershipTypes = [];
-    $passTypes = [];
+    $passTypes       = [];
 
     foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
         if (!empty($row['membership_type'])) {
@@ -70,12 +70,11 @@ function getSubscriptionFilterOptions(PDO $pdo): array
 
     return [
         'membership_types' => array_values($membershipTypes),
-        'pass_types' => array_values($passTypes),
+        'pass_types'       => array_values($passTypes),
     ];
 }
 
-
-// Fetch subscriptions with optional filters for search, membership type, pass type, expiring soon, and status
+// Fetch subscriptions with optional filters: search, membership type, pass type, expiring soon, status
 function getFilteredSubscriptions(PDO $pdo, array $filters = []): array
 {
     $sql = "SELECT 
@@ -90,60 +89,66 @@ function getFilteredSubscriptions(PDO $pdo, array $filters = []): array
                 s.subscription_start,
                 s.subscription_end,
 
-                
                 s.status AS saved_status,
 
-                -- Determine display status based on saved status and expiration dates
+                -- Derive display status from expiration dates, falling back to the saved status
+                -- Order matters: check both-expired first, then individual expirations
                 CASE
-                    WHEN s.membership_end IS NOT NULL 
-                    AND s.membership_end < CURDATE()
+                    WHEN s.membership_end IS NOT NULL
+                    AND  s.membership_end < CURDATE()
+                    AND  s.subscription_end < CURDATE()
+                    THEN 'expired_pass_and_membership'
+
+                    WHEN s.membership_end IS NOT NULL
+                    AND  s.membership_end < CURDATE()
                     THEN 'expired_membership'
 
-                    WHEN s.subscription_end < CURDATE() 
+                    WHEN s.subscription_end < CURDATE()
                     THEN 'expired_pass'
 
-                    WHEN s.membership_end IS NOT NULL 
-                    AND s.membership_end < CURDATE()
-                    AND s.subscription_end < CURDATE()
-                    THEN 'expired_pass_and_membership'
-                    -- If not expired, show the saved status (active/suspended)
+                    -- Not expired: show the saved status (active / suspended)
                     ELSE s.status
                 END AS display_status,
 
+                -- Days remaining for membership (NULL when client has no membership end date)
                 CASE
                     WHEN s.membership_end IS NULL THEN NULL
                     ELSE GREATEST(DATEDIFF(s.membership_end, CURDATE()), 0)
                 END AS membership_days_remaining,
 
+                -- Days remaining for the pass (floor at 0 so it never goes negative)
                 GREATEST(DATEDIFF(s.subscription_end, CURDATE()), 0) AS pass_days_remaining
 
             FROM subscriptions s
-            INNER JOIN clients c 
-                ON s.client_id = c.client_id
-            INNER JOIN membership_plans mp 
-                ON s.plan_id = mp.id
+            INNER JOIN clients c  ON s.client_id = c.client_id
+            INNER JOIN membership_plans mp ON s.plan_id = mp.id
             WHERE 1 = 1";
 
     $params = [];
 
+    // Filter: partial name search
     if (!empty($filters['search'])) {
         $sql .= " AND CONCAT(c.first_name, ' ', c.last_name) LIKE :search";
         $params[':search'] = '%' . $filters['search'] . '%';
     }
 
+    // Filter: exact membership type
     if (!empty($filters['membership_type'])) {
         $sql .= " AND mp.membership_type = :membership_type";
         $params[':membership_type'] = $filters['membership_type'];
     }
 
+    // Filter: exact pass type
     if (!empty($filters['pass_type'])) {
         $sql .= " AND mp.pass_type = :pass_type";
         $params[':pass_type'] = $filters['pass_type'];
     }
 
+    // Filter: expiring within the next 7 days (membership or pass)
     if (!empty($filters['expiring_filter'])) {
         if ($filters['expiring_filter'] === 'membership') {
-            $sql .= " AND s.membership_end IS NOT NULL AND s.membership_end BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 7 DAY)";
+            $sql .= " AND s.membership_end IS NOT NULL
+                      AND s.membership_end BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 7 DAY)";
         }
 
         if ($filters['expiring_filter'] === 'pass') {
@@ -151,6 +156,7 @@ function getFilteredSubscriptions(PDO $pdo, array $filters = []): array
         }
     }
 
+    // Filter: status (active, suspended, expired membership, expired pass)
     if (!empty($filters['status_filter'])) {
         if ($filters['status_filter'] === 'active') {
             $sql .= " AND s.status = 'active' AND s.subscription_end >= CURDATE()";
